@@ -1,5 +1,14 @@
 #pragma once
 
+enum class CONSTANT_BUFFER_TYPE :uint8 {
+	TRANSFORM,
+	MATERIAL,
+	END
+};
+enum {
+	CONSTANT_BUFFER_COUNT = static_cast<uint8>(CONSTANT_BUFFER_TYPE::END),
+};
+
 // GPU의 버퍼를 만드는 영역
 class ConstantBuffer
 {
@@ -7,10 +16,10 @@ public:
 	ConstantBuffer();
 	~ConstantBuffer();
 
-	void Init(uint32 size, uint32 count);
+	void Init(CBV_REGISTER reg,uint32 size, uint32 count);
 
 	void Clear();
-	D3D12_CPU_DESCRIPTOR_HANDLE PushData(int32 rootParamIndex, void* buffer, uint32 size);
+	void PushData(void* buffer, uint32 size);
 
 	D3D12_GPU_VIRTUAL_ADDRESS GetGpuVirtualAddress(uint32 index);
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle(uint32 index);
@@ -30,5 +39,7 @@ private:
 	uint32								_handleIncrementSize = 0;
 
 	uint32					_currentIndex = 0;	// 최근 사용 Index
+
+	CBV_REGISTER			_reg = {};
 };
 

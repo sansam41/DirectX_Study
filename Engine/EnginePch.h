@@ -101,14 +101,29 @@ struct Vertex {
 	Vec2 uv;	// uv ÁÂÇ¥
 };
 
-struct Transform {
-	Vec4 offset;
-};
+// ½Ì±ÛÅæ ÆÐÅÏ »ý¼º
+#define DECLARE_SINGLE(type)			\
+private:								\
+	type() {}							\
+	~type() {}							\
+public:									\
+	static type* GetInstance()			\
+	{									\
+		static type instance;			\
+		return &instance;				\
+	}									\
 
-#define DEVICE			GEngine->GetDevice()->GetDevice()
-#define CMD_LIST		GEngine->GetCmdQueue()->GetCmdList()
-#define RESOURCE_CMD_LIST GEngine->GetCmdQueue()->GetResourceCmdList()
-#define ROOT_SIGNATURE	GEngine->GetSignature()->GetSignature()
+#define GET_SINGLE(type)		type::GetInstance()
+
+#define DEVICE				GEngine->GetDevice()->GetDevice()
+#define CMD_LIST			GEngine->GetCmdQueue()->GetCmdList()
+#define RESOURCE_CMD_LIST	GEngine->GetCmdQueue()->GetResourceCmdList()
+#define ROOT_SIGNATURE		GEngine->GetSignature()->GetSignature()
+
+#define INPUT				GET_SINGLE(Input)
+#define DELTA_TIME			GET_SINGLE(Timer)->GetDeltaTime()
+
+#define CONST_BUFFER(type)	GEngine->GetConstantBuffer(type)
 
 
 
