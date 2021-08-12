@@ -9,5 +9,9 @@ public:
 
 public:
 
+
+private:
+	// 사용 불가
+	virtual void FinalUpdate() sealed {}
 };
 

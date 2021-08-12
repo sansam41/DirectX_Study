@@ -1,9 +1,11 @@
 #pragma once
-
+#include "Object.h"
 enum class COMPONENT_TYPE : uint8
 {
 	TRANSFORM,
 	MESH_RENDERER,
+	CAMERA,
+	LIGHT,
 	// ...
 	MONO_BEHAVIOUR,	// 마지막 순서로 등장해야함, 여러개를 넣어줄 수 있기 때문에 따로 관리하여야하기 때문
 	END,
@@ -18,7 +20,7 @@ enum
 class GameObject;
 class Transform;
 
-class Component
+class Component:public Object
 {
 public:
 	Component(COMPONENT_TYPE type);
@@ -30,6 +32,7 @@ public:
 	virtual void Start() { }	// Awake 다음에
 	virtual void Update() { }	// 매 틱마다 실행
 	virtual void LateUpdate() { }	// Update 이후 실행
+	virtual void FinalUpdate() {}
 
 public:
 	COMPONENT_TYPE GetType() { return _type; }

@@ -79,21 +79,16 @@ void CommandQueue::WaitSync()
 
 void CommandQueue::RenderBegin(const D3D12_VIEWPORT* vp, const D3D12_RECT* rect)
 {
-	// 기존의 것 초기화(capacity는 그대로)
 	_cmdAlloc->Reset();
 	_cmdList->Reset(_cmdAlloc.Get(), nullptr);
 
+	int8 backIndex = _swapChain->GetBackBufferIndex();
 
-	// 현재 backBuffer 리소스를 이동을 시켜 GPU작업 용도로 활용을 하겠다는 요청
-	// ex) swapChain에서 현재 백버퍼를 1로 두고있음 -> 1의 상태를 <화면출력>상태이므로
-	//	   1을 외주 결과물로 사용하기 위해 <외주 결과물> 상태로 변경함
 	D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-		_swapChain->GetCurrentBackBufferResource().Get(), // 리소스를 받음
-		D3D12_RESOURCE_STATE_PRESENT, // 화면 출력 before
-		D3D12_RESOURCE_STATE_RENDER_TARGET); // 외주 결과물 after
+		GEngine->GetRTGroup(RENDER_TARGET_GROUP_TYPE::SWAP_CHAIN)->GetRTTexture(backIndex)->GetTex2D().Get(),
+		D3D12_RESOURCE_STATE_PRESENT, // 화면 출력
+		D3D12_RESOURCE_STATE_RENDER_TARGET); // 외주 결과물
 
-
-	// RootSignature 서명을 사용하겠다고 알림
 	_cmdList->SetGraphicsRootSignature(ROOT_SIGNATURE.Get());
 
 	GEngine->GetConstantBuffer(CONSTANT_BUFFER_TYPE::TRANSFORM)->Clear();
@@ -102,57 +97,36 @@ void CommandQueue::RenderBegin(const D3D12_VIEWPORT* vp, const D3D12_RECT* rect)
 	GEngine->GetTableDescHeap()->Clear();
 
 	ID3D12DescriptorHeap* descHeap = GEngine->GetTableDescHeap()->GetDescriptorHeap().Get();
-	_cmdList->SetDescriptorHeaps(1, &descHeap);	// 어떤 힙을 사용할 지 지정, SetGraphicsRootDescriptorTable()의 선행작업
+	_cmdList->SetDescriptorHeaps(1, &descHeap);
 
 	_cmdList->ResourceBarrier(1, &barrier);
 
 	// Set the viewport and scissor rect.  This needs to be reset whenever the command list is reset.
-	// 다시 세팅
 	_cmdList->RSSetViewports(1, vp);
 	_cmdList->RSSetScissorRects(1, rect);
-
-	// Specify the buffers we are going to render to.
-	// GPU에게 backBuffer을 알려줌
-	D3D12_CPU_DESCRIPTOR_HANDLE backBufferView = _swapChain->GetBackRTV();
-	_cmdList->ClearRenderTargetView(backBufferView, Colors::LightSteelBlue, 0, nullptr);
-
-	D3D12_CPU_DESCRIPTOR_HANDLE depthStencilView = GEngine->GetDepthStencilBuffer()->GetDSVCpuHandle();
-	_cmdList->OMSetRenderTargets(1, &backBufferView, FALSE, &depthStencilView);
-
-	_cmdList->ClearDepthStencilView(depthStencilView, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
 }
 
 void CommandQueue::RenderEnd()
 {
-	// ex) swapChain에서 현재 백버퍼를 1로 두고있음 -> 1의 상태는 <외주 결과물>상태이므로
-	//	   1을 화면 출력으로 사용하기 위해 <화면 출력> 상태로 변경함
-	D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-		_swapChain->GetCurrentBackBufferResource().Get(),
-		D3D12_RESOURCE_STATE_RENDER_TARGET, // 외주 결과물 before
-		D3D12_RESOURCE_STATE_PRESENT); // 화면 출력 after (RenderBegin과 순서가 다르다)
+	int8 backIndex = _swapChain->GetBackBufferIndex();
 
+	D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+		GEngine->GetRTGroup(RENDER_TARGET_GROUP_TYPE::SWAP_CHAIN)->GetRTTexture(backIndex)->GetTex2D().Get(),
+		D3D12_RESOURCE_STATE_RENDER_TARGET, // 외주 결과물
+		D3D12_RESOURCE_STATE_PRESENT); // 화면 출력
 
 	_cmdList->ResourceBarrier(1, &barrier);
-	_cmdList->Close(); // 일 끝!
+	_cmdList->Close();
 
-	// 요청 끝! 이제 처리할 시간
 	// 커맨드 리스트 수행
 	ID3D12CommandList* cmdListArr[] = { _cmdList.Get() };
 	_cmdQueue->ExecuteCommandLists(_countof(cmdListArr), cmdListArr);
 
-	_swapChain->Present(); // 화면을 채워준다
+	_swapChain->Present();
 
-	// Wait until frame commands are complete.  This waiting is inefficient and is
-	// done for simplicity.  Later we will show how to organize our rendering code
-	// so we do not have to wait per frame.
-	// GPU의 처리가 실행이 될 때 까지 CPU가 대기
 	WaitSync();
 
-
-	// 현재 1은 화면 출력으로 사용되고 있고 백버퍼를 0으로 변경해야함
-	// 따라서 swapChain의 백버퍼를 0으로 변경해줌.
-	_swapChain->SwapIndex(); // 백버퍼 스왑
+	_swapChain->SwapIndex();
 }
 
 
