@@ -4,16 +4,19 @@
 
 class Transform;
 class MeshRenderer;
-class MonoBehaviour;
 class Camera;
 class Light;
+class MonoBehaviour;
+class ParticleSystem;
+class Terrain;
+class BaseCollider;
+class Animator;
 
-class GameObject :public Object, public enable_shared_from_this<GameObject>	// 자기 자신의 shared_pointer을 건네주고자 할 때 사용
+class GameObject : public Object, public enable_shared_from_this<GameObject>
 {
 public:
 	GameObject();
 	virtual ~GameObject();
-
 
 	void Awake();
 	void Start();
@@ -27,9 +30,12 @@ public:
 	shared_ptr<MeshRenderer> GetMeshRenderer();
 	shared_ptr<Camera> GetCamera();
 	shared_ptr<Light> GetLight();
+	shared_ptr<ParticleSystem> GetParticleSystem();
+	shared_ptr<Terrain> GetTerrain();
+	shared_ptr<BaseCollider> GetCollider();
+	shared_ptr<Animator> GetAnimator();
 
 	void AddComponent(shared_ptr<Component> component);
-
 
 	void SetCheckFrustum(bool checkFrustum) { _checkFrustum = checkFrustum; }
 	bool GetCheckFrustum() { return _checkFrustum; }
@@ -37,11 +43,15 @@ public:
 	void SetLayerIndex(uint8 layer) { _layerIndex = layer; }
 	uint8 GetLayerIndex() { return _layerIndex; }
 
+	void SetStatic(bool flag) { _static = flag; }
+	bool IsStatic() { return _static; }
+
 private:
-	array<shared_ptr<Component>, FIXED_COMPONENT_COUNT> _components;	// 고정된 번호, 타입당 1개만 존재
-	vector<shared_ptr<MonoBehaviour>> _scripts;	// scripts는 따로 관리
+	array<shared_ptr<Component>, FIXED_COMPONENT_COUNT> _components;
+	vector<shared_ptr<MonoBehaviour>> _scripts;
 
 	bool _checkFrustum = true;
 	uint8 _layerIndex = 0;
+	bool _static = true;
 };
 

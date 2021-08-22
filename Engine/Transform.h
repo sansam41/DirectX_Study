@@ -1,8 +1,6 @@
 #pragma once
 #include "Component.h"
 
-
-
 class Transform : public Component
 {
 public:
@@ -11,7 +9,6 @@ public:
 
 	virtual void FinalUpdate() override;
 	void PushData();
-
 
 public:
 	// Parent 기준
@@ -22,10 +19,7 @@ public:
 	// TEMP
 	float GetBoundingSphereRadius() { return max(max(_localScale.x, _localScale.y), _localScale.z); }
 
-
-	// 물체의 Local Space에서 World Space로 넘어가는 단계
 	const Matrix& GetLocalToWorldMatrix() { return _matWorld; }
-	// 월드 포지션
 	Vec3 GetWorldPosition() { return _matWorld.Translation(); }
 
 	Vec3 GetRight() { return _matWorld.Right(); }
@@ -36,21 +30,24 @@ public:
 	void SetLocalRotation(const Vec3& rotation) { _localRotation = rotation; }
 	void SetLocalScale(const Vec3& scale) { _localScale = scale; }
 
+	void LookAt(const Vec3& dir);
+
+	static bool CloseEnough(const float& a, const float& b, const float& epsilon = std::numeric_limits<float>::epsilon());
+	static Vec3 DecomposeRotationMatrix(const Matrix& rotation);
+
 public:
 	void SetParent(shared_ptr<Transform> parent) { _parent = parent; }
 	weak_ptr<Transform> GetParent() { return _parent; }
-
 
 private:
 	// Parent 기준
 	Vec3 _localPosition = {};
 	Vec3 _localRotation = {};
-	Vec3 _localScale = { 1.f,1.f,1.f };
+	Vec3 _localScale = { 1.f, 1.f, 1.f };
 
 	Matrix _matLocal = {};
 	Matrix _matWorld = {};
 
-	// Parent와 순환관계를 방지하기 위해 weak_ptr로 Parent 객체를 받음
 	weak_ptr<Transform> _parent;
 };
 
